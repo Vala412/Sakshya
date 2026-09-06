@@ -23,12 +23,17 @@ dependencies = [
 # shouldn't need them.
 rag = [
     "openai>=1.50",
-    "qdrant-client>=1.11",
+    # Pinned to the 1.11.x line to match the Qdrant *server* image pinned in
+    # docker-compose.yml (v1.11.5) -- qdrant-client warns/can misbehave when
+    # its major.minor drifts more than one minor version from the server.
+    "qdrant-client>=1.11,<1.12",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "langfuse>=2.50",
     "ragas>=0.2",
     "pypdf>=4.3",
+    "pydantic-settings>=2.5",
+    "python-dotenv>=1.0",
 ]
 dev = [
     "pytest>=8.2",
@@ -54,6 +59,11 @@ gstrecon = ["py.typed"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+# "live" tests make real OpenAI API calls (small but real cost) -- excluded
+# by default so routine `pytest`/`make test` runs stay free and offline.
+# Run them explicitly with `make test-live` or `pytest -m live`.
+addopts = '-m "not live"'
+markers = ["live: makes real calls to external services (OpenAI, Qdrant); costs money, needs network"]
 
 [tool.ruff]
 line-length = 100

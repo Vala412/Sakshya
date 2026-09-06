@@ -1,5 +1,5 @@
-.PHONY: all sync generate reconcile evaluate test lint typecheck clean \
-	fetch-corpus ingest-corpus
+.PHONY: all sync generate reconcile evaluate test test-live lint typecheck clean \
+	fetch-corpus ingest-corpus embed-corpus test-retrieval
 
 SYNTHETIC_DIR := data/synthetic
 
@@ -24,13 +24,25 @@ evaluate: generate
 test: sync
 	uv run pytest
 
+# Makes real OpenAI/Qdrant calls -- small real cost, needs Qdrant running
+# and OPENAI_API_KEY set. See tests/rag/test_vector_store.py.
+test-live: sync
+	uv run pytest -m live
+
 # Corpus pipeline: download the CGST Act/Rules -> extract+chunk with
-# citation-grade provenance.
+# citation-grade provenance -> embed into Qdrant.
 fetch-corpus: sync
 	uv run python scripts/fetch_corpus.py
 
 ingest-corpus: sync
 	uv run python scripts/ingest_corpus.py
+
+embed-corpus: sync
+	uv run python scripts/embed_corpus.py
+
+# Manual smoke test, not part of the pytest suite -- see its docstring.
+test-retrieval: sync
+	uv run python scripts/test_retrieval.py
 
 lint: sync
 	uv run ruff check src tests scripts
