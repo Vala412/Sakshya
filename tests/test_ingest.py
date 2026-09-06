@@ -63,6 +63,32 @@ class TestParseGstr2bJson:
         with pytest.raises(ingest.SchemaMismatchError, match="inum"):
             ingest.parse_gstr2b_json(bad_file)
 
+    def test_missing_both_value_fields_raises_schema_mismatch(self, tmp_path: Path) -> None:
+        # Regression: with neither "txval" nor "val" present, taxable value
+        # used to silently compute as `0 - tax.total` (a negative number)
+        # instead of raising -- exactly the kind of quietly-wrong data this
+        # parser is supposed to catch rather than propagate.
+        bad_file = tmp_path / "bad.json"
+        bad_file.write_text(
+            '{"data": {"docdata": {"b2b": [{"ctin": "27AAPFU0939F1ZV", "inv": '
+            '[{"inum": "INV/0001", "dt": "01-04-2024", "iamt": "18.00"}]}]}}}'
+        )
+        with pytest.raises(ingest.SchemaMismatchError, match="txval.*val"):
+            ingest.parse_gstr2b_json(bad_file)
+
+    def test_unrecognized_itcavl_value_raises_schema_mismatch(self, tmp_path: Path) -> None:
+        # Regression: an earlier version constructed ItcAvailability(raw)
+        # directly, so an unexpected value crashed with a bare pydantic/enum
+        # ValueError instead of a clear, located SchemaMismatchError.
+        bad_file = tmp_path / "bad.json"
+        bad_file.write_text(
+            '{"data": {"docdata": {"b2b": [{"ctin": "27AAPFU0939F1ZV", "inv": '
+            '[{"inum": "INV/0001", "dt": "01-04-2024", "txval": "100.00", '
+            '"itcavl": "MAYBE"}]}]}}}'
+        )
+        with pytest.raises(ingest.SchemaMismatchError, match="itcavl"):
+            ingest.parse_gstr2b_json(bad_file)
+
 
 class TestParseBooksCsv:
     @staticmethod

@@ -120,6 +120,13 @@ class Exception_(BaseModel):
     match_category: MatchCategory
     books_doc: Document | None
     gstr2b_doc: Document | None
+    # Per-FINDING exposure, not a per-document allocation: one document can
+    # legitimately carry multiple findings (e.g. a duplicate booking that is
+    # *also* on an invalid GSTIN gets both EX-10 and EX-06). Summing this
+    # column across all findings therefore is not the same figure as the
+    # ITC bridge's closing variance, which allocates each document's
+    # signed_tax exactly once. The bridge (report.py), not a sum of this
+    # column, is the authoritative net-ITC-impact figure.
     itc_at_risk: Decimal
     evidence: str
 
