@@ -1,5 +1,5 @@
 .PHONY: all sync generate reconcile evaluate test test-live lint typecheck clean \
-	fetch-corpus ingest-corpus embed-corpus test-retrieval
+	fetch-corpus ingest-corpus embed-corpus test-retrieval explain-synthetic
 
 SYNTHETIC_DIR := data/synthetic
 
@@ -43,6 +43,11 @@ embed-corpus: sync
 # Manual smoke test, not part of the pytest suite -- see its docstring.
 test-retrieval: sync
 	uv run python scripts/test_retrieval.py
+
+# Reconcile the synthetic dataset AND generate cited AI explanations for
+# every HIGH/MEDIUM finding -- makes real OpenAI calls (small real cost).
+explain-synthetic: generate
+	uv run python scripts/explain_findings.py $(SYNTHETIC_DIR)/books.csv $(SYNTHETIC_DIR)/gstr2b.json -o $(SYNTHETIC_DIR)/working_paper.xlsx
 
 lint: sync
 	uv run ruff check src tests scripts
