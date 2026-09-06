@@ -89,21 +89,36 @@ def _tax_amounts_from_2b(item: dict[str, Any], where: str) -> TaxAmounts:
     )
 
 
-def _taxable_value_from_2b(item: dict[str, Any], tax: TaxAmounts) -> Decimal:
+def _taxable_value_from_2b(item: dict[str, Any], tax: TaxAmounts, where: str) -> Decimal:
     """Prefer an explicit taxable-value field; fall back to deriving it from
     the total value minus tax, since it's unconfirmed whether "txval" is
-    actually present on every real export (see module docstring)."""
+    actually present on every real export (see module docstring).
+
+    Raises if *neither* field is present rather than silently computing
+    `0 - tax.total` (a negative taxable value that would then propagate
+    into every downstream comparison and the ITC bridge as quietly wrong
+    data) -- a missing amount field is exactly the kind of schema drift
+    this module is designed to surface immediately, not paper over.
+    """
     if "txval" in item:
         return normalize.parse_amount(item["txval"])
-    total_value = normalize.parse_amount(item.get("val"))
-    return total_value - tax.total
+    if "val" in item:
+        total_value = normalize.parse_amount(item["val"])
+        return total_value - tax.total
+    raise SchemaMismatchError(f"Missing both 'txval' and 'val' fields at {where}")
 
 
-def _itc_availability(item: dict[str, Any]) -> ItcAvailability | None:
+def _itc_availability(item: dict[str, Any], where: str) -> ItcAvailability | None:
     raw = item.get("itcavl")
     if raw is None:
         return None
-    return ItcAvailability(str(raw).strip().upper())
+    normalized = str(raw).strip().upper()
+    try:
+        return ItcAvailability(normalized)
+    except ValueError as exc:
+        raise SchemaMismatchError(
+            f"Unrecognized itcavl value {raw!r} at {where} (expected 'Y' or 'N')"
+        ) from exc
 
 
 def _parse_2b_b2b(
@@ -125,9 +140,9 @@ def _parse_2b_b2b(
                     supplier_name=trdnm,
                     invoice_number=str(_require(inv, "inum", inv_where)),
                     invoice_date=normalize.parse_date(_require(inv, "dt", inv_where)),
-                    taxable_value=_taxable_value_from_2b(inv, tax),
+                    taxable_value=_taxable_value_from_2b(inv, tax, inv_where),
                     tax=tax,
-                    itc_availability=_itc_availability(inv),
+                    itc_availability=_itc_availability(inv, inv_where),
                     return_period=return_period,
                     row_ref=inv_where,
                 )
@@ -156,9 +171,9 @@ def _parse_2b_cdnr(
                     supplier_name=trdnm,
                     invoice_number=str(_require(note, "ntnum", note_where)),
                     invoice_date=normalize.parse_date(_require(note, "ntdt", note_where)),
-                    taxable_value=_taxable_value_from_2b(note, tax),
+                    taxable_value=_taxable_value_from_2b(note, tax, note_where),
                     tax=tax,
-                    itc_availability=_itc_availability(note),
+                    itc_availability=_itc_availability(note, note_where),
                     return_period=return_period,
                     row_ref=note_where,
                 )

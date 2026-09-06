@@ -33,6 +33,18 @@ deliberately not an optimal bipartite assignment (e.g. Hungarian algorithm) --
 an auditor re-checking a match needs to see "these two documents agreed on N
 of 7 parameters," not "the solver's global cost function preferred this
 pairing over that one."
+
+Known scalability limit: candidate generation is O(n*m) per doc-type bucket
+(every books document is compared against every GSTR-2B document of the same
+type), because the Probable-match path requires comparing against documents
+with a *different* GSTIN -- the natural optimization (bucket by GSTIN first)
+would eliminate exactly the candidates that path exists to recover. Fine for
+a single supplier-period's realistic volume (hundreds to low thousands of
+documents per bucket); a filer with tens of thousands of invoices in one
+document-type bucket would see this degrade noticeably. Not yet optimized:
+no evidence this project's actual usage needs it, and a bucket-first
+optimization would need to special-case the Probable-match candidates
+separately rather than simplify the whole comparison.
 """
 
 from __future__ import annotations
@@ -249,7 +261,18 @@ def reconcile(
     closely amounts happen to align.
     """
     results: list[MatchResult] = []
-    doc_types = {d.doc_type for d in books_docs} | {d.doc_type for d in gstr2b_docs}
+    # Sorted rather than iterated straight off the set: Python randomizes
+    # str hashing per process by default (PYTHONHASHSEED), so a bare set's
+    # iteration order is *not* stable across runs -- verified empirically
+    # (same three DocType values came out in a different order across
+    # process invocations). Left as a set, the row order of the exception
+    # register and ITC bridge would vary run-to-run on byte-identical
+    # input, which directly contradicts this project's reproducibility
+    # guarantee (see report.py's RunMetadata / SHA-256 hashes).
+    doc_types = sorted(
+        {d.doc_type for d in books_docs} | {d.doc_type for d in gstr2b_docs},
+        key=lambda dt: dt.value,
+    )
 
     for doc_type in doc_types:
         books_bucket = [d for d in books_docs if d.doc_type == doc_type]
