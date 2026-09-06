@@ -12,5 +12,9 @@ dist/
 build/
 data/synthetic/
 data/qdrant_storage/
+# Large binary PDFs + their derived chunks -- both reproducible via
+# scripts/fetch_corpus.py + scripts/ingest_corpus.py, not worth versioning.
+data/corpus/raw/
+data/corpus/chunks.json
 *.xlsx
 !data/samples/*.xlsx
