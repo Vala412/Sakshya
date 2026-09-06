@@ -52,7 +52,6 @@ class TestDocumentSignedAmounts:
     def test_invoice_signed_tax_is_positive(self) -> None:
         doc = _doc(DocType.INVOICE)
         assert doc.signed_tax == Decimal("180.00")
-        assert doc.signed_taxable_value == Decimal("1000.00")
 
     def test_debit_note_signed_tax_is_positive(self) -> None:
         doc = _doc(DocType.DEBIT_NOTE)
@@ -61,7 +60,6 @@ class TestDocumentSignedAmounts:
     def test_credit_note_signed_tax_is_negative(self) -> None:
         doc = _doc(DocType.CREDIT_NOTE)
         assert doc.signed_tax == Decimal("-180.00")
-        assert doc.signed_taxable_value == Decimal("-1000.00")
 
     def test_total_value_is_taxable_plus_tax(self) -> None:
         doc = _doc(DocType.INVOICE)

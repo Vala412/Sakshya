@@ -97,6 +97,12 @@ class TestParseAmount:
         assert normalize.parse_amount(None) == Decimal("0.00")
         assert normalize.parse_amount("") == Decimal("0.00")
 
+    def test_whitespace_only_is_zero(self) -> None:
+        # Regression: only `value == ""` was checked, so a whitespace-only
+        # CSV cell (a plausible export artifact) fell through to the
+        # general parse path and raised instead of being treated as blank.
+        assert normalize.parse_amount("   ") == Decimal("0.00")
+
     def test_numeric_inputs(self) -> None:
         assert normalize.parse_amount(1000) == Decimal("1000.00")
         assert normalize.parse_amount(1000.5) == Decimal("1000.50")

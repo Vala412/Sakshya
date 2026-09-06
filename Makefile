@@ -1,11 +1,16 @@
-.PHONY: all sync generate reconcile evaluate test lint typecheck clean
+.PHONY: all sync generate reconcile evaluate test test-live lint typecheck clean \
+	fetch-corpus ingest-corpus embed-corpus test-retrieval
 
 SYNTHETIC_DIR := data/synthetic
 
 all: generate reconcile evaluate test
 
 sync:
-	uv sync --extra dev
+	# ingest_corpus.py needs pypdf, which lives in the optional `rag` extra
+	# -- `uv sync --extra dev` alone *reconciles* the venv down to just the
+	# dev extra rather than leaving rag packages alone, so it would silently
+	# uninstall pypdf if a previous `--extra rag` sync had installed it.
+	uv sync --extra dev --extra rag
 
 generate: sync
 	uv run python scripts/generate_synthetic.py --out-dir $(SYNTHETIC_DIR)
@@ -18,6 +23,26 @@ evaluate: generate
 
 test: sync
 	uv run pytest
+
+# Makes real OpenAI/Qdrant calls -- small real cost, needs Qdrant running
+# and OPENAI_API_KEY set. See tests/rag/test_vector_store.py.
+test-live: sync
+	uv run pytest -m live
+
+# Corpus pipeline: download the CGST Act/Rules -> extract+chunk with
+# citation-grade provenance -> embed into Qdrant.
+fetch-corpus: sync
+	uv run python scripts/fetch_corpus.py
+
+ingest-corpus: sync
+	uv run python scripts/ingest_corpus.py
+
+embed-corpus: sync
+	uv run python scripts/embed_corpus.py
+
+# Manual smoke test, not part of the pytest suite -- see its docstring.
+test-retrieval: sync
+	uv run python scripts/test_retrieval.py
 
 lint: sync
 	uv run ruff check src tests scripts

@@ -130,11 +130,3 @@ class Document(BaseModel):
         as a deduction and once as an unrelated "duplicate" exception.
         """
         return -self.total_tax if self.doc_type == DocType.CREDIT_NOTE else self.total_tax
-
-    @property
-    def signed_taxable_value(self) -> Decimal:
-        return (
-            -self.taxable_value
-            if self.doc_type == DocType.CREDIT_NOTE
-            else self.taxable_value
-        )

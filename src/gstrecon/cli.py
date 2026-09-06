@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import typer
 
 from gstrecon import ingest, report
 from gstrecon.exceptions import DEFAULT_TAX_TOLERANCE, reconcile_full
-from gstrecon.ingest import SchemaMismatchError
 from gstrecon.matching import DEFAULT_GSTIN_FUZZY_THRESHOLD, DEFAULT_INVOICE_FUZZY_THRESHOLD
 
 app = typer.Typer(
@@ -37,13 +36,23 @@ def reconcile(
     three-sheet working paper (ITC Bridge, Exception Register,
     Reproducibility) to `output`.
     """
-    # Typer/click has no native Decimal parameter type, so this is taken as
-    # a string and parsed here rather than losing precision through float.
-    parsed_tolerance = Decimal(tax_tolerance)
+    # Every expected "bad input" failure in this pipeline surfaces as one of
+    # these two: ValueError (SchemaMismatchError is a subclass, and so --
+    # in Python's stdlib -- is json.JSONDecodeError raised by a malformed
+    # GSTR-2B file; normalize.parse_date/parse_amount also raise plain
+    # ValueError for an unparseable cell) or InvalidOperation (Decimal
+    # doesn't subclass ValueError, so a garbage --tax-tolerance needs its
+    # own arm). Catching broadly here -- rather than only SchemaMismatchError,
+    # as an earlier version did -- is deliberate: a malformed date deep in a
+    # CSV is just as much a "bad input" case as a missing column, and both
+    # deserve a clean CLI message instead of a raw traceback. A genuine
+    # internal bug (anything not raised by input parsing) is intentionally
+    # left to propagate with its full traceback rather than swallowed here.
     try:
+        parsed_tolerance = Decimal(tax_tolerance)
         books_docs = ingest.parse_books_csv(books)
         gstr2b_docs = ingest.parse_gstr2b_json(gstr2b)
-    except SchemaMismatchError as exc:
+    except (ValueError, InvalidOperation) as exc:
         typer.secho(f"Input format error: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
 
