@@ -11,16 +11,8 @@ it.
 
 from __future__ import annotations
 
-from functools import lru_cache
-
-from openai import AsyncOpenAI
-
 from gstrecon.rag.config import get_settings
-
-
-@lru_cache(maxsize=1)
-def _client() -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=get_settings().openai_api_key)
+from gstrecon.rag.openai_client import get_openai_client
 
 
 async def embed_text(text: str) -> list[float]:
@@ -38,7 +30,7 @@ async def embed_batch(texts: list[str]) -> list[list[float]]:
     """
     if not texts:
         return []
-    response = await _client().embeddings.create(
+    response = await get_openai_client().embeddings.create(
         model=get_settings().openai_embedding_model, input=texts
     )
     ordered = sorted(response.data, key=lambda item: item.index)
