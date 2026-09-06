@@ -159,9 +159,13 @@ def parse_amount(value: str | int | float | Decimal | None) -> Decimal:
 
     Blank/None becomes 0.00 rather than raising: GSTR-2B leaves a tax-head
     field empty when that head doesn't apply to the document (e.g. no CESS),
-    and that must not be mistaken for a parse failure.
+    and that must not be mistaken for a parse failure. A whitespace-only
+    cell (a plausible CSV export artifact) counts as blank too -- checking
+    only `value == ""` would let " " fall through to the general string
+    path below and raise, which is the wrong failure mode for what is,
+    functionally, still an empty cell.
     """
-    if value is None or value == "":
+    if value is None or (isinstance(value, str) and value.strip() == ""):
         return Decimal("0.00")
     if isinstance(value, Decimal):
         return value.quantize(Decimal("0.01"))

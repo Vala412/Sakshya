@@ -1,5 +1,8 @@
+import subprocess
+import sys
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 from gstrecon import matching
 from gstrecon.matching import MatchCategory
@@ -235,3 +238,56 @@ class TestGreedyDisambiguation:
         matched_2b_refs = [r.gstr2b_doc.row_ref for r in results if r.gstr2b_doc]
         assert len(matched_books_refs) == len(set(matched_books_refs))
         assert len(matched_2b_refs) == len(set(matched_2b_refs))
+
+
+class TestResultOrderIsReproducibleAcrossProcesses:
+    """Regression test for a real bug: `reconcile()` used to bucket
+    documents by `doc_type` via a bare set. Python randomizes string
+    hashing per process by default (PYTHONHASHSEED), and DocType is a
+    StrEnum, so that set's iteration order silently varied across process
+    runs -- verified empirically before the fix (same 3 DocType values came
+    out in a different order under different hash seeds). That would have
+    meant the exception register's row order (and the working paper built
+    from it) could differ between two runs of the *identical* input file,
+    directly contradicting this project's reproducibility guarantee. Must
+    be exercised via a real subprocess with a different hash seed each
+    time -- there is no way to change PYTHONHASHSEED for an already-running
+    interpreter.
+    """
+
+    SCRIPT = """
+from datetime import date
+from decimal import Decimal
+from gstrecon import matching
+from gstrecon.models import DocSource, DocType, Document, TaxAmounts
+
+def doc(source, doc_type, n):
+    return Document(
+        source=source, doc_type=doc_type, supplier_gstin="27AAPFU0939F1ZV",
+        invoice_number=f"{doc_type.value}-{n}", invoice_date=date(2024, 4, 1),
+        taxable_value=Decimal("1000.00"), tax=TaxAmounts(igst=Decimal("180.00")),
+        row_ref=f"{doc_type.value}-{n}",
+    )
+
+doc_types = [DocType.INVOICE, DocType.CREDIT_NOTE, DocType.DEBIT_NOTE]
+books = [doc(DocSource.BOOKS, dt, i) for dt in doc_types for i in range(3)]
+gstr2b = [doc(DocSource.GSTR_2B, dt, i) for dt in doc_types for i in range(3)]
+results = matching.reconcile(books, gstr2b)
+print([r.books_doc.row_ref for r in results])
+"""
+
+    def _run_with_seed(self, seed: str) -> str:
+        env = {**__import__("os").environ, "PYTHONHASHSEED": seed}
+        result = subprocess.run(
+            [sys.executable, "-c", self.SCRIPT],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=Path(__file__).parent.parent,
+        )
+        assert result.returncode == 0, result.stderr
+        return result.stdout.strip()
+
+    def test_row_order_is_identical_across_different_hash_seeds(self) -> None:
+        outputs = {self._run_with_seed(seed) for seed in ("0", "1", "2", "42")}
+        assert len(outputs) == 1, f"result order varied across hash seeds: {outputs}"

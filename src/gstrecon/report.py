@@ -21,6 +21,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from openpyxl import Workbook
+from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
@@ -35,6 +36,12 @@ _ZERO = Decimal("0.00")
 _HEADER_FILL = PatternFill(start_color="1F2937", end_color="1F2937", fill_type="solid")
 _HEADER_FONT = Font(color="FFFFFF", bold=True)
 _TOTAL_FONT = Font(bold=True)
+# Fixed 2-decimal, thousands-separated display for every rupee-amount cell.
+# Without this, openpyxl/Excel's default "General" format can render a
+# Decimal-to-float conversion's binary-fraction noise (e.g. an amount that's
+# exactly 1234.56 in Decimal has no exact binary double equivalent) with
+# more visible digits than a financial working paper should ever show.
+_AMOUNT_FORMAT = "#,##0.00"
 
 
 @dataclass(frozen=True)
@@ -195,29 +202,39 @@ def _autosize(ws: Worksheet, widths: list[int]) -> None:
         ws.column_dimensions[get_column_letter(idx)].width = width
 
 
+def _append_amount_row(ws: Worksheet, row: list[object], *, amount_col: int = 4) -> None:
+    ws.append(row)
+    ws.cell(row=ws.max_row, column=amount_col).number_format = _AMOUNT_FORMAT
+
+
 def _write_bridge_sheet(ws: Worksheet, bridge: ItcBridge) -> None:
     ws.title = "ITC Bridge"
     ws.append(["Line", "Reason Code(s)", "Documents", "Amount (Rs.)"])
     _style_header(ws, 1, 4)
 
-    ws.append(["Total ITC as per Books", "", "", float(bridge.books_total)])
+    _append_amount_row(ws, ["Total ITC as per Books", "", "", float(bridge.books_total)])
     for line in bridge.lines:
-        ws.append([line.label, line.reason_codes, line.document_count, float(line.amount)])
-    ws.append(
-        ["Total ITC as per GSTR-2B (available)", "", "", float(bridge.gstr2b_total_available)]
+        _append_amount_row(
+            ws, [line.label, line.reason_codes, line.document_count, float(line.amount)]
+        )
+    _append_amount_row(
+        ws, ["Total ITC as per GSTR-2B (available)", "", "", float(bridge.gstr2b_total_available)]
     )
-    ws.append(
+    _append_amount_row(
+        ws,
         [
             "ITC blocked per GSTR-2B (informational, Section 17(5) etc.)",
             "",
             "",
             float(bridge.gstr2b_total_blocked),
-        ]
+        ],
     )
 
     closing_row = ws.max_row + 1
     ws.cell(row=closing_row, column=1, value="Closing variance (must be nil)").font = _TOTAL_FONT
-    ws.cell(row=closing_row, column=4, value=float(bridge.closing_variance)).font = _TOTAL_FONT
+    closing_cell = ws.cell(row=closing_row, column=4, value=float(bridge.closing_variance))
+    closing_cell.font = _TOTAL_FONT
+    closing_cell.number_format = _AMOUNT_FORMAT
 
     _autosize(ws, [55, 30, 12, 18])
 
@@ -246,12 +263,22 @@ def _write_register_sheet(ws: Worksheet, findings: list[Exception_]) -> None:
     ]
     ws.append(headers)
     _style_header(ws, 1, len(headers))
+    itc_risk_col = headers.index("ITC at Risk (Rs.)") + 1
+    ws.cell(row=1, column=itc_risk_col).comment = Comment(
+        "Per-finding exposure, not per-document: one document can carry "
+        "multiple findings (e.g. a duplicate booking on an invalid GSTIN "
+        "gets both EX-10 and EX-06), so summing this column overcounts "
+        "relative to the ITC Bridge sheet. The Bridge is the authoritative "
+        "net-ITC-impact figure.",
+        "gstrecon",
+    )
 
     for finding in findings:
         books, gstr2b = finding.books_doc, finding.gstr2b_doc
         anchor = books if books is not None else gstr2b
         gstin = anchor.supplier_gstin if anchor is not None else ""
-        ws.append(
+        _append_amount_row(
+            ws,
             [
                 finding.reason_code.value,
                 finding.severity.value,
@@ -264,7 +291,8 @@ def _write_register_sheet(ws: Worksheet, findings: list[Exception_]) -> None:
                 gstin,
                 float(finding.itc_at_risk),
                 finding.evidence,
-            ]
+            ],
+            amount_col=10,
         )
         ws.cell(row=ws.max_row, column=2).fill = _SEVERITY_FILL[finding.severity.value]
 
