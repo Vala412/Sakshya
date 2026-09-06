@@ -1,0 +1,68 @@
+{
+  "data": {
+    "docdata": {
+      "b2b": [
+        {
+          "ctin": "27AAPFU0939F1ZV",
+          "trdnm": "Acme Traders Pvt Ltd",
+          "supfilstt": "Filed",
+          "inv": [
+            {
+              "inum": "INV/0001",
+              "dt": "01-04-2024",
+              "val": 1180.00,
+              "txval": 1000.00,
+              "iamt": 180.00,
+              "camt": 0.00,
+              "samt": 0.00,
+              "csamt": 0.00,
+              "itcavl": "Y"
+            },
+            {
+              "inum": "INV/0002",
+              "dt": "05-04-2024",
+              "val": 590.00,
+              "iamt": 0.00,
+              "camt": 45.00,
+              "samt": 45.00,
+              "csamt": 0.00,
+              "itcavl": "N"
+            }
+          ]
+        }
+      ],
+      "cdnr": [
+        {
+          "ctin": "27AAPFU0939F1ZV",
+          "trdnm": "Acme Traders Pvt Ltd",
+          "nt": [
+            {
+              "ntnum": "CN/0001",
+              "typ": "C",
+              "ntdt": "10-04-2024",
+              "val": 118.00,
+              "txval": 100.00,
+              "iamt": 18.00,
+              "camt": 0.00,
+              "samt": 0.00,
+              "csamt": 0.00,
+              "itcavl": "Y"
+            },
+            {
+              "ntnum": "DN/0001",
+              "typ": "D",
+              "ntdt": "12-04-2024",
+              "val": 236.00,
+              "txval": 200.00,
+              "iamt": 36.00,
+              "camt": 0.00,
+              "samt": 0.00,
+              "csamt": 0.00,
+              "itcavl": "Y"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
