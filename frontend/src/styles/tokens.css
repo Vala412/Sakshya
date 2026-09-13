@@ -1,0 +1,141 @@
+/* Design tokens.
+ *
+ * THE ONE RULE THIS SYSTEM IS BUILT ON: colour carries meaning, never
+ * decoration. The chrome -- surfaces, borders, text, buttons, nav -- is
+ * strictly monochrome. Hue appears only where it encodes something the
+ * auditor must act on: a severity, or the nil-variance proof.
+ *
+ * That constraint is doing real work in an audit tool. When every control
+ * is grey, a rose cell in a register of 159 rows is unmissable, and the
+ * reader learns in seconds that "coloured = finding". A UI that also spends
+ * colour on its buttons and its logo has to shout to get the same effect.
+ *
+ * Consequences, enforced throughout:
+ *   - Primary buttons are inverted monochrome (paper on ink), not blue.
+ *   - Focus rings are bright neutral, not an accent hue.
+ *   - Emerald is reserved for exactly one thing: the bridge tying to nil.
+ */
+
+:root {
+  /* --- Monochrome ramp (dark is the default; see below) --------------- */
+  --bg: #09090b;
+  --bg-elevated: #101012;
+  --surface: #141417;
+  --surface-hover: #1b1b1f;
+  --border: #26262b;
+  --border-strong: #38383f;
+  --text: #f4f4f5;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --text-inverse: #09090b;
+
+  /* Inverted primary action: paper on ink. */
+  --action: #fafafa;
+  --action-hover: #e4e4e7;
+  --action-text: #09090b;
+
+  /* --- Semantic: severity. The ONLY decorative-looking colour allowed. */
+  --high: #fb7185;
+  --high-bg: rgba(244, 63, 94, 0.12);
+  --high-border: rgba(244, 63, 94, 0.32);
+
+  --medium: #fbbf24;
+  --medium-bg: rgba(245, 158, 11, 0.12);
+  --medium-border: rgba(245, 158, 11, 0.3);
+
+  /* Low severity is deliberately NOT given an alarm hue. A low-severity
+   * finding that glowed would compete with the high-severity rows it is
+   * meant to sit quietly beneath. */
+  --low: #a1a1aa;
+  --low-bg: rgba(161, 161, 170, 0.1);
+  --low-border: rgba(161, 161, 170, 0.24);
+
+  /* --- Semantic: the proof. Emerald appears nowhere else. ------------- */
+  --nil: #34d399;
+  --nil-bg: rgba(16, 185, 129, 0.12);
+  --nil-border: rgba(16, 185, 129, 0.35);
+
+  /* Directional, for bridge amounts. Not severity -- a large negative
+   * adjustment is not "bad", it is just a subtraction. */
+  --negative: #fb7185;
+  --positive: #34d399;
+
+  --focus: #ffffff;
+
+  /* --- Shape. ONE radius scale, per the consistency lock. -------------
+   * Surfaces 10px, controls 8px, pills full. No exceptions. */
+  --r-surface: 10px;
+  --r-control: 8px;
+  --r-pill: 999px;
+
+  /* --- Type --------------------------------------------------------- */
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Every figure, code, GSTIN, and row-ref renders in mono. Financial
+   * columns must align digit-over-digit to be scannable; proportional
+   * numerals in a 159-row register are a legibility bug, not a style
+   * choice. */
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+
+  /* --- Depth. Tinted to the surface hue, never pure black. ----------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7);
+
+  /* --- Layering. Documented scale; no ad-hoc z-50 anywhere. ---------- */
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-overlay: 30;
+  --z-toast: 50;
+
+  /* --- Motion. Spring-ish easing; durations short enough to feel like
+   * direct manipulation rather than a cutscene. -------------------- */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 120ms;
+  --t-mid: 260ms;
+  --t-slow: 520ms;
+}
+
+/* Light mode. Roles are redefined, not re-invented: the same token means
+ * the same thing in both themes, so a component never branches on theme. */
+:root[data-theme='light'] {
+  --bg: #fbfbfa;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #8b8b94;
+  --text-inverse: #fafafa;
+
+  --action: #18181b;
+  --action-hover: #27272a;
+  --action-text: #fafafa;
+
+  --high: #e11d48;
+  --high-bg: rgba(225, 29, 72, 0.07);
+  --high-border: rgba(225, 29, 72, 0.24);
+
+  --medium: #b45309;
+  --medium-bg: rgba(180, 83, 9, 0.07);
+  --medium-border: rgba(180, 83, 9, 0.22);
+
+  --low: #71717a;
+  --low-bg: rgba(113, 113, 122, 0.07);
+  --low-border: rgba(113, 113, 122, 0.2);
+
+  --nil: #047857;
+  --nil-bg: rgba(4, 120, 87, 0.08);
+  --nil-border: rgba(4, 120, 87, 0.28);
+
+  --negative: #e11d48;
+  --positive: #047857;
+
+  --focus: #18181b;
+
+  --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.06);
+  --shadow-md: 0 4px 16px -4px rgba(24, 24, 27, 0.1);
+  --shadow-lg: 0 24px 64px -16px rgba(24, 24, 27, 0.18);
+}
