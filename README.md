@@ -54,6 +54,27 @@ Exception classifier          (exceptions.py — 12 reason codes, EX-01..EX-12)
 Working paper (.xlsx)         (report.py — ITC bridge + register + repro sheet)
 ```
 
+A web app (`src/gstrecon/api/` + `frontend/`) serves that same engine over
+HTTP and renders the working paper in the browser:
+
+```
+React + TypeScript UI   (frontend/ -- Vite, CSS Modules, Motion)
+        |
+        v  POST /api/reconcile  (multipart: books.csv + gstr2b.json)
+FastAPI layer           (api/ -- no LLM, no vector store, no API key)
+        |
+        v
+the same deterministic engine, then .xlsx via GET /api/runs/{id}/working-paper
+```
+
+The API is a thin transport over the engine and computes no figure of its
+own: anything derivable in both places belongs in the engine, because a
+second implementation is a second thing that can disagree with the working
+paper. Money crosses the wire as exact decimal **strings**, never JSON
+numbers -- the engine works in `Decimal` precisely so 0.1 + 0.2 is 0.30, and
+a float round-trip at the transport layer would throw that away on the one
+figure the project exists to prove is nil.
+
 Phase 3 (`src/gstrecon/rag/`) adds retrieval over the actual CGST Act and
 Rules text so exceptions can eventually carry a cited legal explanation:
 
@@ -115,12 +136,39 @@ make embed-corpus                 # embed into Qdrant
 make test-retrieval               # manual retrieval smoke test (real API calls)
 ```
 
+## Web app
+
+Two processes, two terminals. Neither needs an API key, a model, or Qdrant.
+
+```bash
+make api         # FastAPI on :8000  (uv sync --extra api)
+make frontend    # Vite dev server on :5173, proxying /api to :8000
+```
+
+Then open <http://localhost:5173>, drop in a purchase-register CSV and a
+GSTR-2B JSON, and the browser shows the same three sheets the .xlsx
+contains -- the ITC bridge as an animated waterfall, the exception register
+with filtering and per-finding evidence, and the reproducibility record
+including both input SHA-256s. The working paper itself downloads from the
+run that produced the screen, not from a second reconciliation.
+
+```bash
+make frontend-test     # vitest
+make frontend-build    # tsc -b && vite build
+```
+
 ## Testing
 
 ```bash
 make test        # full suite (offline, free)
 make test-live    # + tests that make real OpenAI/Qdrant calls (small real cost)
 ```
+
+`tests/test_api.py` pins the HTTP contract the frontend is written against
+-- the exact-decimal encoding, the single error envelope, and that the
+bridge still ties to nil after serialisation. The frontend's own suite
+(`frontend/src/**/*.test.tsx`) covers the money formatting, reason-code
+presentation, register filtering/sorting, and every failure state.
 
 250 labelled synthetic cases (`scripts/generate_synthetic.py`) exercise all
 12 reason codes with exactly one injected defect per case; the eval harness
