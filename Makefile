@@ -10,7 +10,9 @@ sync:
 	# -- `uv sync --extra dev` alone *reconciles* the venv down to just the
 	# dev extra rather than leaving rag packages alone, so it would silently
 	# uninstall pypdf if a previous `--extra rag` sync had installed it.
-	uv sync --extra dev --extra rag
+	# `api` is listed for the same reason: omitting it here uninstalls
+	# FastAPI and breaks tests/test_api.py collection.
+	uv sync --extra dev --extra rag --extra api
 
 generate: sync
 	uv run python scripts/generate_synthetic.py --out-dir $(SYNTHETIC_DIR)
@@ -48,6 +50,12 @@ test-retrieval: sync
 # every HIGH/MEDIUM finding -- makes real OpenAI calls (small real cost).
 explain-synthetic: generate
 	uv run python scripts/explain_findings.py $(SYNTHETIC_DIR)/books.csv $(SYNTHETIC_DIR)/gstr2b.json -o $(SYNTHETIC_DIR)/working_paper.xlsx
+
+# --- Web API ------------------------------------------------------------
+# Serves the deterministic engine only: no OPENAI_API_KEY, no Qdrant.
+
+api: sync
+	uv run uvicorn gstrecon.api.main:app --reload --port 8000
 
 lint: sync
 	uv run ruff check src tests scripts
