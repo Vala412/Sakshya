@@ -1,0 +1,442 @@
+/* Intake view.
+ *
+ * Asymmetric 7/5 split rather than a centred hero: the left column carries
+ * the proposition, the right carries the actual work. A centred stack here
+ * would push the dropzones below the fold on a laptop, which is the one
+ * thing this screen must never do.
+ */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+  padding: 56px 0 80px;
+}
+
+@media (max-width: 1120px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    padding: 32px 0 56px;
+  }
+}
+
+.lede {
+  position: sticky;
+  top: 96px;
+}
+
+@media (max-width: 1120px) {
+  .lede {
+    position: static;
+  }
+}
+
+.headline {
+  font-size: clamp(2rem, 4.2vw, 3.1rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  max-width: 15ch;
+}
+
+/* Emphasis within the headline uses weight + colour of the SAME family --
+ * never a second font, which reads as amateur. */
+.headlineAccent {
+  color: var(--text-3);
+}
+
+.sub {
+  margin-top: 20px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--text-2);
+  max-width: 52ch;
+}
+
+.credentials {
+  margin-top: 32px;
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-surface);
+  overflow: hidden;
+}
+
+.credential {
+  background: var(--bg);
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.credentialIcon {
+  color: var(--text-3);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.credentialText {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.credentialText strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* --- Dropzone -------------------------------------------------------- */
+
+.dropzone {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 18px;
+  border-radius: var(--r-control);
+  border: 1px dashed var(--border-strong);
+  background: var(--bg-elevated);
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.dropzone:hover {
+  border-color: var(--text-3);
+  background: var(--surface-hover);
+}
+
+.dropzoneActive {
+  border-color: var(--text);
+  border-style: solid;
+  background: var(--surface-hover);
+}
+
+.dropzoneFilled {
+  border-style: solid;
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.dropzoneError {
+  border-color: var(--high-border);
+  background: var(--high-bg);
+}
+
+.dropzoneRow {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.dropzoneIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-control);
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.dropzoneIconFilled {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.dropzoneIconError {
+  color: var(--high);
+  background: var(--high-bg);
+  border-color: var(--high-border);
+}
+
+.dropzoneMain {
+  min-width: 0;
+  flex: 1;
+}
+
+.dropzoneLabel {
+  font-size: 13px;
+  font-weight: 500;
+  display: block;
+}
+
+.dropzoneHint {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropzoneFile {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropzoneInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.fieldError {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--high);
+  line-height: 1.5;
+}
+
+/* --- Form ------------------------------------------------------------ */
+
+.fields {
+  display: grid;
+  gap: 14px;
+}
+
+.toleranceRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: end;
+  padding-top: 4px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+/* Label ABOVE the input, always. Never placeholder-as-label. */
+.fieldLabel {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.input {
+  height: 38px;
+  padding: 0 12px;
+  width: 100%;
+  border-radius: var(--r-control);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.input:hover {
+  border-color: var(--text-3);
+}
+
+.input::placeholder {
+  color: var(--text-3);
+}
+
+.fieldHelp {
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.submitRow {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.submitNote {
+  font-size: 12px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Running state --------------------------------------------------- */
+
+.running {
+  display: grid;
+  gap: 18px;
+  padding: 8px 0 4px;
+}
+
+.scanFile {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-control);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The sweep is a pure transform on a pseudo-element -- no layout thrash,
+ * and it collapses to nothing under reduced motion. */
+.scanFile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--text) 7%, transparent) 45%,
+    color-mix(in srgb, var(--text) 12%, transparent) 50%,
+    color-mix(in srgb, var(--text) 7%, transparent) 55%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: sweep 1.6s var(--ease-in-out) infinite;
+  pointer-events: none;
+}
+
+@keyframes sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanFile::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.scanName {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scanStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.scanDots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.scanDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-3);
+  animation: pulse 1.2s var(--ease-in-out) infinite;
+}
+
+.scanDot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.scanDot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanDot {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* The tolerance row is a single field in a 1fr/auto grid; at narrow widths
+ * the auto column is empty anyway, so collapse it. */
+@media (max-width: 640px) {
+  .layout {
+    padding: 24px 0 48px;
+    gap: 32px;
+  }
+
+  .toleranceRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .submitRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  /* Full-width CTA rather than a shrunk one: "Reconcile" must never wrap. */
+  .submitRow > button {
+    width: 100%;
+  }
+
+  .submitNote {
+    order: 2;
+    justify-content: center;
+  }
+
+  .credential {
+    padding: 12px 14px;
+  }
+}
+
+/* Small phones: the headline's clamp floor is still too large against a
+ * 15ch measure, and the file name + size can overflow its row. */
+@media (max-width: 420px) {
+  .headline {
+    font-size: 1.75rem;
+    max-width: 100%;
+  }
+
+  .sub {
+    font-size: 14.5px;
+  }
+
+  .dropzone {
+    padding: 14px;
+  }
+
+  .dropzoneRow {
+    gap: 11px;
+  }
+}

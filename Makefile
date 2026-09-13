@@ -57,6 +57,15 @@ explain-synthetic: generate
 api: sync
 	uv run uvicorn gstrecon.api.main:app --reload --port 8000
 
+frontend:
+	cd frontend && npm install && npm run dev
+
+frontend-build:
+	cd frontend && npm install && npm run build
+
+frontend-test:
+	cd frontend && npm run test
+
 lint: sync
 	uv run ruff check src tests scripts
 
